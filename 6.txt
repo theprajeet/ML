@@ -1,0 +1,51 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.datasets import fetch_california_housing
+
+# Load dataset
+california_housing = fetch_california_housing(as_frame=True)
+data = california_housing.data
+data['MedHouseVal'] = california_housing.target
+
+# Extract relevant feature and target
+X = data[['AveRooms']].values
+y = data['MedHouseVal'].values
+
+# LWR function
+def locally_weighted_regression(X, y, tau):
+    m = len(X)
+    y_pred = np.zeros(m)
+    for i in range(m):
+        weights = np.exp(-np.sum((X - X[i])**2, axis=1) / (2 * tau**2))
+        W = np.diag(weights)
+        try:
+            theta = np.linalg.inv(X.T @ W @ X) @ X.T @ W @ y
+            y_pred[i] = X[i] @ theta
+        except np.linalg.LinAlgError:
+            y_pred[i] = np.mean(y)
+    return y_pred
+
+# Normalize and add intercept
+X_normalized = (X - np.mean(X, axis=0)) / np.std(X, axis=0)
+X_normalized = np.c_[np.ones(X_normalized.shape), X_normalized]
+
+# Subset the data
+np.random.seed(0)
+indices = np.random.choice(len(X_normalized), size=500, replace=False)
+X_subset = X_normalized[indices]
+y_subset = y[indices]
+
+# Run LWR
+tau = 0.5
+y_pred_subset = locally_weighted_regression(X_subset, y_subset, tau)
+
+# Plot results
+plt.figure(figsize=(10, 6))
+plt.scatter(X_subset[:, 1], y_subset, color='blue', alpha=0.5, label='Actual Data')
+plt.plot(np.sort(X_subset[:, 1]), np.sort(y_pred_subset), color='red', linewidth=2, label='LWR Fit')
+plt.xlabel('Average Rooms (Normalized)')
+plt.ylabel('Median House Value')
+plt.title('Locally Weighted Regression (LWR) - California Housing')
+plt.legend()
+plt.show()

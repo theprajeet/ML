@@ -1,0 +1,27 @@
+# Install seaborn if not already installed
+!pip install seaborn
+
+# Load the California Housing Dataset
+from sklearn.datasets import fetch_california_housing
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load the dataset
+california_housing = fetch_california_housing(as_frame=True)
+df = california_housing.frame
+
+# Create Histograms for Numerical Features
+df.hist(bins=30, figsize=(20, 15), color='skyblue', edgecolor='black')
+plt.suptitle('Histograms of Numerical Features', fontsize=20)
+plt.show()
+
+# Generate Box Plots to Identify Outliers
+plt.figure(figsize=(20, 15))
+for i, column in enumerate(df.columns, 1):
+    plt.subplot(3, 3, i)
+    sns.boxplot(y=df[column], color='lightgreen')
+    plt.title(f'Box Plot of {column}', fontsize=15)
+
+plt.tight_layout()
+plt.show()

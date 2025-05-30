@@ -1,0 +1,36 @@
+from google.colab import files
+import pandas as pd
+
+# Upload the CSV file
+uploaded = files.upload()
+
+# Function to implement Find-S
+def find_s_algorithm(data_file):
+    data = pd.read_csv(data_file)
+    features = data.columns[:-1]
+    target = data.columns[-1]
+
+    # Get positive examples
+    positive_examples = data[data[target] == 'Yes']
+    if positive_examples.empty:
+        raise ValueError("No positive examples found in the dataset.")
+    
+    # Initialize with first positive example
+    hypothesis = positive_examples.iloc[0][features].tolist()
+
+    # Refine hypothesis
+    for _, example in positive_examples.iterrows():
+        for i in range(len(hypothesis)):
+            if hypothesis[i] != example[features[i]]:
+                hypothesis[i] = '?'
+    
+    return hypothesis
+
+# Example usage
+if __name__ == "__main__":
+    data_file = "/content/finds2.csv"  # Adjust filename as per uploaded file
+    try:
+        hypothesis = find_s_algorithm(data_file)
+        print("Most specific hypothesis consistent with the training examples:", hypothesis)
+    except ValueError as e:
+        print(e)

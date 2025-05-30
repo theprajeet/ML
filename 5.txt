@@ -1,0 +1,29 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.neighbors import KNeighborsClassifier
+
+def generate_data():
+    np.random.seed(42)
+    x = np.random.rand(100, 1)
+    y = np.array([1 if xi <= 0.5 else 2 for xi in x])
+    return x, y
+
+def main():
+    x, y = generate_data()
+    x_train, y_train = x[:50], y[:50]
+    x_test, y_test = x[50:], y[50:]
+    k_values = [1, 2, 3, 4, 5, 20, 30]
+
+    print("\n--- k-NN Classification Results ---\n")
+    for k in k_values:
+        knn = KNeighborsClassifier(n_neighbors=k)
+        knn.fit(x_train, y_train)
+        y_pred = knn.predict(x_test)
+        accuracy = np.mean(y_pred == y_test)
+        print(f"Results for k={k}: Accuracy = {accuracy:.2f}")
+        
+        for i, label in enumerate(y_pred, start=51):
+            print(f"Test Point x{i} (value: {x_test[i-51][0]:.4f}) -> Classified as Class {label}")
+
+if __name__ == "__main__":
+    main()

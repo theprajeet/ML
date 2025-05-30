@@ -1,0 +1,52 @@
+# Import necessary libraries
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.datasets import fetch_olivetti_faces
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.decomposition import PCA
+
+# Load the Olivetti Faces dataset
+data = fetch_olivetti_faces(shuffle=True, random_state=42)
+X = data.data           # Flattened image data
+y = data.target         # Target labels (0 to 39)
+
+# Split into training and test sets (70% train, 30% test)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Apply PCA to reduce dimensionality and improve performance
+pca = PCA(n_components=100, whiten=True, random_state=42)
+X_train_pca = pca.fit_transform(X_train)
+X_test_pca = pca.transform(X_test)
+
+# Train a Gaussian Naive Bayes classifier on PCA-reduced data
+gnb = GaussianNB()
+gnb.fit(X_train_pca, y_train)
+
+# Predict on the test set
+y_pred = gnb.predict(X_test_pca)
+
+# Evaluate accuracy
+accuracy = accuracy_score(y_test, y_pred)
+print(f'Accuracy with PCA: {accuracy * 100:.2f}%')
+
+# Print classification report
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred, zero_division=0))
+
+# Perform cross-validation on the full PCA-transformed dataset
+X_pca_full = pca.fit_transform(X)
+cross_val_scores = cross_val_score(gnb, X_pca_full, y, cv=5, scoring='accuracy')
+print(f'\nCross-validation accuracy with PCA: {cross_val_scores.mean() * 100:.2f}%')
+
+# Show sample predictions using matplotlib
+fig, axes = plt.subplots(3, 5, figsize=(12, 8))  # 3 rows, 5 columns of images
+for ax, image, label, prediction in zip(axes.ravel(), X_test, y_test, y_pred):
+    ax.imshow(image.reshape(64, 64), cmap=plt.cm.gray)
+    ax.set_title(f"True: {label}, Pred: {prediction}")
+    ax.axis('off')
+
+plt.tight_layout()
+plt.show()
