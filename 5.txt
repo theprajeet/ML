@@ -1,29 +1,33 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.neighbors import KNeighborsClassifier
+from collections import Counter
 
-def generate_data():
-    np.random.seed(42)
-    x = np.random.rand(100, 1)
-    y = np.array([1 if xi <= 0.5 else 2 for xi in x])
-    return x, y
+np.random.seed(0) # For reproducibility
+x = np.random.rand(100)
 
-def main():
-    x, y = generate_data()
-    x_train, y_train = x[:50], y[:50]
-    x_test, y_test = x[50:], y[50:]
-    k_values = [1, 2, 3, 4, 5, 20, 30]
+labels = []
+for xi in x[:50]:
+    if xi <= 0.5:
+        labels.append(1) # Class 1
+    else:
+        labels.append(2) # Class 2
 
-    print("\n--- k-NN Classification Results ---\n")
-    for k in k_values:
-        knn = KNeighborsClassifier(n_neighbors=k)
-        knn.fit(x_train, y_train)
-        y_pred = knn.predict(x_test)
-        accuracy = np.mean(y_pred == y_test)
-        print(f"Results for k={k}: Accuracy = {accuracy:.2f}")
-        
-        for i, label in enumerate(y_pred, start=51):
-            print(f"Test Point x{i} (value: {x_test[i-51][0]:.4f}) -> Classified as Class {label}")
+def knn_classify(x_train, y_train, x_test_point, k):
+    distances = [abs(xi - x_test_point) for xi in x_train]
+    k_indices = np.argsort(distances)[:k]
+    k_labels = [y_train[i] for i in k_indices]
+    most_common = Counter(k_labels).most_common(1)
+    return most_common[0][0]
 
-if __name__ == "__main__":
-    main()
+k_values = [1, 2, 3, 4, 5, 20, 30]
+
+results = {}
+for k in k_values:
+    predicted_labels = []
+    for test_point in x[50:]:
+        label = knn_classify(x[:50], labels, test_point, k)
+        predicted_labels.append(label)
+    results[k] = predicted_labels
+
+for k in k_values:
+    print(f"\nResults for k={k}:")
+    print(results[k])

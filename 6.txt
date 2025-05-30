@@ -1,51 +1,45 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.datasets import fetch_california_housing
+from sklearn.preprocessing import StandardScaler
 
-# Load dataset
-california_housing = fetch_california_housing(as_frame=True)
-data = california_housing.data
-data['MedHouseVal'] = california_housing.target
+data = fetch_california_housing()
+X = data.data[:, 0] 
+Y = data.target 
 
-# Extract relevant feature and target
-X = data[['AveRooms']].values
-y = data['MedHouseVal'].values
+scaler = StandardScaler()
+X = scaler.fit_transform(X.reshape(-1,1)).flatten()
 
-# LWR function
-def locally_weighted_regression(X, y, tau):
-    m = len(X)
-    y_pred = np.zeros(m)
+def locally_weighted_regression(x0, X, Y, tau):
+    m = X.shape[0]
+    W = np.eye(m)
+
     for i in range(m):
-        weights = np.exp(-np.sum((X - X[i])**2, axis=1) / (2 * tau**2))
-        W = np.diag(weights)
-        try:
-            theta = np.linalg.inv(X.T @ W @ X) @ X.T @ W @ y
-            y_pred[i] = X[i] @ theta
-        except np.linalg.LinAlgError:
-            y_pred[i] = np.mean(y)
-    return y_pred
+        W[i,i] = np.exp(- (X[i] - x0)**2 / (2 * tau**2))
 
-# Normalize and add intercept
-X_normalized = (X - np.mean(X, axis=0)) / np.std(X, axis=0)
-X_normalized = np.c_[np.ones(X_normalized.shape), X_normalized]
+    X_ = np.vstack((np.ones(m), X)).T # shape (m,2)
+    x0_ = np.array([1, x0]).reshape(1,2) # shape (1,2)
+    theta = np.linalg.pinv(X_.T @ W @ X_) @ (X_.T @ W @ Y)
 
-# Subset the data
-np.random.seed(0)
-indices = np.random.choice(len(X_normalized), size=500, replace=False)
-X_subset = X_normalized[indices]
-y_subset = y[indices]
+    y0 = x0_ @ theta
+    return y0[0]
 
-# Run LWR
-tau = 0.5
-y_pred_subset = locally_weighted_regression(X_subset, y_subset, tau)
+X_test = np.linspace(min(X), max(X), 300)
+Y_pred = []
 
-# Plot results
-plt.figure(figsize=(10, 6))
-plt.scatter(X_subset[:, 1], y_subset, color='blue', alpha=0.5, label='Actual Data')
-plt.plot(np.sort(X_subset[:, 1]), np.sort(y_pred_subset), color='red', linewidth=2, label='LWR Fit')
-plt.xlabel('Average Rooms (Normalized)')
+tau = 0.5 # Bandwidth parameter
+for x0 in X_test:
+    y0 = locally_weighted_regression(x0, X, Y, tau)
+    Y_pred.append(y0)
+
+Y_pred = np.array(Y_pred)
+
+plt.figure(figsize=(12,7))
+plt.scatter(X, Y, color='red', s=10, label='Training data')
+plt.plot(X_test, Y_pred, color='blue', label=f'LWR Prediction (tau={tau})')
+plt.title('Locally Weighted Regression on California Housing Data')
+plt.xlabel('Normalized Median Income')
 plt.ylabel('Median House Value')
-plt.title('Locally Weighted Regression (LWR) - California Housing')
 plt.legend()
+plt.grid(True)
 plt.show()

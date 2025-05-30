@@ -1,30 +1,42 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 from sklearn.datasets import load_breast_cancer
 from sklearn.tree import DecisionTreeClassifier, plot_tree
-from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, accuracy_score
 
-# Load dataset
 data = load_breast_cancer()
-X = data.data
-y = data.target
+X = data.data # Feature matrix (30 features)
+y = data.target # Labels: 0 = malignant, 1 = benign
 
-# Train-test split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+print("Feature names:", data.feature_names)
+print("Target classes:", data.target_names)
 
-# Train model
-model = DecisionTreeClassifier(random_state=42)
-model.fit(X_train, y_train)
+X_train, X_test, y_train, y_test = train_test_split(
+	X, y, test_size=0.2, random_state=42
+)
 
-# Predict
-y_pred = model.predict(X_test)
-print(f"Model Accuracy: {accuracy_score(y_test, y_pred) * 100:.2f}%")
+clf = DecisionTreeClassifier(criterion='gini', max_depth=4, random_state=42)
 
-# Predict a new sample
-sample = X_test[5].reshape(1, -1)
-prediction = model.predict(sample)
-print("New sample classification:", data.target_names[prediction][0])
+clf.fit(X_train, y_train)
 
-# Plot tree
-plt.figure(figsize=(12, 8))
-plot_tree(model, filled=True, feature_names=data.feature_names, class_names=data.target_names)
-plt.title("Decision Tree - Breast Cancer Classification")
+print("\n Decision Tree Classifier has been created and trained.")
+
+y_pred = clf.predict(X_test)
+
+print("\n Model Evaluation:")
+print("Accuracy Score:", accuracy_score(y_test, y_pred))
+print("Classification Report:\n", classification_report(y_test, y_pred,
+target_names=data.target_names))
+
+sample = X_test[0].reshape(1, -1)
+sample_prediction = clf.predict(sample)
+
+print("\n Prediction for New Sample:")
+print("Predicted class:", data.target_names[sample_prediction[0]])
+
+plt.figure(figsize=(20, 10))
+plot_tree(clf,filled=True, rounded=True, class_names=data.target_names, feature_names=data.feature_names)
+plt.title(" Decision Tree for Breast Cancer Classification")
 plt.show()
