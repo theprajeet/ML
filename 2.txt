@@ -1,20 +1,15 @@
-import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.datasets import fetch_california_housing
 
-data = fetch_california_housing()
-df = pd.DataFrame(data.data, columns=data.feature_names)
-df['MedHouseVal'] = data.target
 
-corr_matrix = df.corr()
+data = fetch_california_housing(as_frame=True).frame
 
-plt.figure(figsize=(12, 8))
-sns.heatmap(corr_matrix, annot=True, fmt=".2f", cmap='coolwarm', cbar=True, square=True)
-plt.title('Correlation Matrix Heatmap for California Housing Dataset')
+
+sns.heatmap(data.corr(), annot=True, cmap='coolwarm')
+plt.title("Correlation Heatmap")
 plt.show()
 
-sample_df = df.sample(n=1000, random_state=42)  # Sample 1000 instances from the entire DataFrame
-sns.pairplot(sample_df, diag_kind='kde', plot_kws={'alpha': 0.6})
-plt.suptitle('Pair Plot of Features (Sampled to 1000 Instances)', y=1.02)
+
+sns.pairplot(data.sample(300))  
 plt.show()

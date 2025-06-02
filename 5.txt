@@ -1,33 +1,44 @@
 import numpy as np
-from collections import Counter
+import matplotlib.pyplot as plt
+from sklearn.neighbors import KNeighborsClassifier
 
-np.random.seed(0) # For reproducibility
-x = np.random.rand(100)
+def generate_data():
+    np.random.seed(42)
+    x = np.random.rand(100, 1)
+    y = np.array([1 if xi <= 0.5 else 2 for xi in x])
+    return x, y
 
-labels = []
-for xi in x[:50]:
-    if xi <= 0.5:
-        labels.append(1) # Class 1
-    else:
-        labels.append(2) # Class 2
+def main():
+    x, y = generate_data()
+    x_train, y_train = x[:50], y[:50]
+    x_test, y_test = x[50:], y[50:]
 
-def knn_classify(x_train, y_train, x_test_point, k):
-    distances = [abs(xi - x_test_point) for xi in x_train]
-    k_indices = np.argsort(distances)[:k]
-    k_labels = [y_train[i] for i in k_indices]
-    most_common = Counter(k_labels).most_common(1)
-    return most_common[0][0]
+    k_values = [1, 2, 3, 4, 5, 20, 30]
 
-k_values = [1, 2, 3, 4, 5, 20, 30]
+    print("\n--- k-NN Classification Results ---\n")
 
-results = {}
-for k in k_values:
-    predicted_labels = []
-    for test_point in x[50:]:
-        label = knn_classify(x[:50], labels, test_point, k)
-        predicted_labels.append(label)
-    results[k] = predicted_labels
+    for k in k_values:
+        knn = KNeighborsClassifier(n_neighbors=k)
+        knn.fit(x_train, y_train)
+        y_pred = knn.predict(x_test)
 
-for k in k_values:
-    print(f"\nResults for k={k}:")
-    print(results[k])
+        accuracy = np.mean(y_pred == y_test)
+
+        print(f"Results for k={k}: (Accuracy: {accuracy:.2f})")
+        for i, label in enumerate(y_pred, start=51):
+            print(f"Test Point x{i} (value: {x_test[i-51][0]:.4f}) -> Classified as Class {label}")
+        print("\n")
+
+        plt.figure(figsize=(8, 5))
+        plt.scatter(x_train, y_train, c='blue', edgecolors='black', label='Training Data', marker='o')
+        plt.scatter(x_test, y_pred, c='red', marker='x', label=f'Predictions (k={k})')
+        plt.xlabel('x values')
+        plt.ylabel('Class Label')
+        plt.yticks([1, 2], ["Class 1", "Class 2"])
+        plt.title(f'k-NN Classification for k={k} (Accuracy: {accuracy:.2f})')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+if __name__ == "__main__":
+    main()

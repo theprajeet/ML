@@ -1,28 +1,32 @@
-from sklearn.datasets import fetch_olivetti_faces
-from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import GaussianNB
-from sklearn.metrics import accuracy_score
+import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.datasets import fetch_olivetti_faces
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.decomposition import PCA
 
-faces = fetch_olivetti_faces()
-X = faces.data
-y = faces.target
+data = fetch_olivetti_faces(shuffle=True, random_state=42)
+X = data.data
+y = data.target
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=42
-)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-model = GaussianNB()
-model.fit(X_train, y_train)
-y_pred = model.predict(X_test)
+pca = PCA(n_components=100, whiten=True, random_state=42)
+X_train_pca = pca.fit_transform(X_train)
+X_test_pca = pca.transform(X_test)
 
+gnb = GaussianNB()
+gnb.fit(X_train_pca, y_train)
+
+y_pred = gnb.predict(X_test_pca)
 accuracy = accuracy_score(y_test, y_pred)
-print(f"Naive Bayes Classifier Accuracy: {accuracy:.2f}")
+print(f'Accuracy with PCA: {accuracy * 100:.2f}%')
 
-fig, axes = plt.subplots(2, 5, figsize=(10, 5))
-for i, ax in enumerate(axes.ravel()):
-    ax.imshow(X_test[i].reshape(64, 64), cmap='gray')
-    ax.set_title(f"True: {y_test[i]}\nPred: {y_pred[i]}")
-    ax.axis('off')
-plt.tight_layout()
-plt.show()
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred, zero_division=0))
+
+X_pca_full = pca.fit_transform(X)
+cv_scores = cross_val_score(gnb, X_pca_full, y, cv=5, scoring='accuracy')
+print(f'\nCross-validation accuracy with PCA: {cv_scores.mean() * 100:.2f}%')
