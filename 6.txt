@@ -1,44 +1,55 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.datasets import fetch_california_housing
 
-california_housing = fetch_california_housing(as_frame=True)
-data = california_housing.data
-data['MedHouseVal'] = california_housing.target
+# Gaussian Kernel function
+def gaussian_kernel(x, xi, tau):
+    return np.exp(-np.sum((x - xi) ** 2) / (2 * tau ** 2))
 
-X = data[['AveRooms']].values
-y = data['MedHouseVal'].values
+# Locally Weighted Regression function
+def locally_weighted_regression(x, X, y, tau):
+    m = X.shape[0]
+    
+    # Compute weights for all training examples
+    weights = np.array([gaussian_kernel(x, X[i], tau) for i in range(m)])
+    
+    # Create diagonal weight matrix
+    W = np.diag(weights)
+    
+    # Compute theta using the weighted normal equation
+    XTWX = X.T @ W @ X
+    XTWy = X.T @ W @ y
+    theta = np.linalg.inv(XTWX) @ XTWy
+    
+    # Predict y value for the input x
+    return x @ theta
 
-def locally_weighted_regression(X, y, tau):
-    m = len(X)
-    y_pred = np.zeros(m)
-    for i in range(m):
-        weights = np.exp(-np.sum((X - X[i])**2, axis=1) / (2 * tau**2))
-        W = np.diag(weights)
-        try:
-            theta = np.linalg.inv(X.T @ W @ X) @ X.T @ W @ y
-            y_pred[i] = X[i] @ theta
-        except np.linalg.LinAlgError:
-            y_pred[i] = np.mean(y)
-    return y_pred
+# Generate synthetic dataset (sine wave with noise)
+np.random.seed(42)
+X = np.linspace(0, 2 * np.pi, 100)
+y = np.sin(X) + 0.1 * np.random.randn(100)
 
-X_normalized = (X - np.mean(X, axis=0)) / np.std(X, axis=0)
-X_normalized = np.c_[np.ones(X_normalized.shape), X_normalized]
+# Add bias term (intercept) to input features
+X_bias = np.c_[np.ones(X.shape), X]
 
-np.random.seed(0)
-subset_indices = np.random.choice(len(X_normalized), size=500, replace=False)
-X_subset = X_normalized[subset_indices]
-y_subset = y[subset_indices]
+# Create test points for prediction
+x_test = np.linspace(0, 2 * np.pi, 200)
+x_test_bias = np.c_[np.ones(x_test.shape), x_test]
 
+# Set kernel bandwidth (tau)
 tau = 0.5
-y_pred_subset = locally_weighted_regression(X_subset, y_subset, tau)
 
+# Predict y values for each test point
+y_pred = np.array([
+    locally_weighted_regression(xi, X_bias, y, tau) for xi in x_test_bias
+])
+
+# Plot the original data and LWR fit
 plt.figure(figsize=(10, 6))
-plt.scatter(X_subset[:, 1], y_subset, color='blue', alpha=0.5, label='Data')
-plt.plot(np.sort(X_subset[:, 1]), np.sort(y_pred_subset), color='red', linewidth=2, label='LWR Fit')
-plt.xlabel('Average Rooms')
-plt.ylabel('Median House Value')
-plt.title('California Housing: Locally Weighted Regression')
-plt.legend()
+plt.scatter(X, y, color='red', label='Training Data', alpha=0.7)
+plt.plot(x_test, y_pred, color='blue', label=f'LWR Fit (tau={tau})', linewidth=2)
+plt.xlabel('X', fontsize=12)
+plt.ylabel('y', fontsize=12)
+plt.title('Locally Weighted Regression', fontsize=14)
+plt.legend(fontsize=10)
+plt.grid(alpha=0.3)
 plt.show()

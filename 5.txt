@@ -2,36 +2,49 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.neighbors import KNeighborsClassifier
 
+# Generate synthetic 1D data and labels
 def generate_data():
-    np.random.seed(42)
-    x = np.random.rand(100, 1)
-    y = np.array([1 if xi <= 0.5 else 2 for xi in x])
+    np.random.seed(42)  # Set random seed for reproducibility
+    x = np.random.rand(100, 1)  # 100 random numbers in [0, 1)
+    y = np.array([1 if xi <= 0.5 else 2 for xi in x])  # Classify based on 0.5 threshold
     return x, y
 
 def main():
+    # Load data
     x, y = generate_data()
+
+    # Split into training and testing sets
     x_train, y_train = x[:50], y[:50]
     x_test, y_test = x[50:], y[50:]
 
+    # Different values of k to test
     k_values = [1, 2, 3, 4, 5, 20, 30]
 
     print("\n--- k-NN Classification Results ---\n")
 
     for k in k_values:
+        # Train k-NN model
         knn = KNeighborsClassifier(n_neighbors=k)
         knn.fit(x_train, y_train)
+
+        # Predict on test data
         y_pred = knn.predict(x_test)
 
+        # Calculate accuracy
         accuracy = np.mean(y_pred == y_test)
 
+        # Display results
         print(f"Results for k={k}: (Accuracy: {accuracy:.2f})")
         for i, label in enumerate(y_pred, start=51):
-            print(f"Test Point x{i} (value: {x_test[i-51][0]:.4f}) -> Classified as Class {label}")
+            print(f"Test Point x{i} (value: {x_test[i - 51][0]:.4f}) -> Classified as Class {label}")
         print("\n")
 
+        # Plot classification results
         plt.figure(figsize=(8, 5))
-        plt.scatter(x_train, y_train, c='blue', edgecolors='black', label='Training Data', marker='o')
+        plt.scatter(x_train, y_train, c='blue', label='Training Data', marker='o')
+        plt.scatter(x_test, y_test, c='green', marker='s', label='True Labels')
         plt.scatter(x_test, y_pred, c='red', marker='x', label=f'Predictions (k={k})')
+
         plt.xlabel('x values')
         plt.ylabel('Class Label')
         plt.yticks([1, 2], ["Class 1", "Class 2"])
@@ -40,5 +53,6 @@ def main():
         plt.grid(True)
         plt.show()
 
+# Run the main function
 if __name__ == "__main__":
     main()
