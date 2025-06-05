@@ -1,50 +1,30 @@
+
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.datasets import load_breast_cancer
-from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, accuracy_score
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+from sklearn import tree
 
-# Load Breast Cancer dataset
 data = load_breast_cancer()
 X = data.data
 y = data.target
 
-# Display feature and target class names
-print("Feature names:", data.feature_names)
-print("Target classes:", data.target_names)
-
-# Split dataset into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
-
-# Create and train Decision Tree classifier
-clf = DecisionTreeClassifier(criterion='gini', max_depth=4, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+clf = DecisionTreeClassifier(random_state=42)
 clf.fit(X_train, y_train)
-print("\nDecision Tree Classifier has been created and trained.")
-
-# Evaluate model performance
 y_pred = clf.predict(X_test)
-print("\nModel Evaluation:")
-print("Accuracy Score:", accuracy_score(y_test, y_pred))
-print("Classification Report:\n", classification_report(y_test, y_pred, target_names=data.target_names))
 
-# Predict class of a new sample (first test sample)
-sample = X_test[0].reshape(1, -1)
-sample_prediction = clf.predict(sample)
-print("\nPrediction for New Sample:")
-print("Predicted class:", data.target_names[sample_prediction[0]])
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Model Accuracy: {accuracy * 100:.2f}%")
+new_sample = np.array([X_test[0]])
+prediction = clf.predict(new_sample)
 
-# Visualize the decision tree
-plt.figure(figsize=(20, 10))
-plot_tree(
-    clf,
-    filled=True,
-    rounded=True,
-    class_names=data.target_names,
-    feature_names=data.feature_names
-)
-plt.title("Decision Tree for Breast Cancer Classification")
+prediction_class = "Benign" if prediction == 1 else "Malignant"
+print(f"Predicted Class for the new sample: {prediction_class}")
+
+plt.figure(figsize=(12,8))
+tree.plot_tree(clf, filled=True, feature_names=data.feature_names, class_names=data.target_names)
+plt.title("Decision Tree - Breast Cancer Dataset")
 plt.show()

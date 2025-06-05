@@ -30,3 +30,11 @@ if __name__ == "__main__":
         print("Most specific hypothesis consistent with the training examples:", hypothesis)
     except ValueError as e:
         print(e)
+
+
+Colour,Shape,Size,Target
+Red,Circle,Large,Yes
+Red,Square,Small,Yes
+Green,Circle,Small,No
+Blue,Square,Large,No
+Red,Circle,Medium,Yes 
